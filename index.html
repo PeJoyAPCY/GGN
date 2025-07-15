@@ -58,12 +58,17 @@
   canvas {
     display: none;
   }
+  .inline-label {
+    display: inline-block;
+    margin-right: 10px;
+  }
 </style>
 </head>
 <body>
 
 <h2>📷 ระบบถ่ายภาพ + ส่ง Log เข้า Telegram</h2>
 
+<!-- เลือกเขต -->
 <select id="zone">
   <option value="">-- เลือกเขต --</option>
   <option value="โซน A">โซน A</option>
@@ -71,13 +76,27 @@
   <option value="โซน C">โซน C</option>
 </select>
 
-<select id="jobType">
-  <option value="">-- เลือกประเภทงาน --</option>
-  <option value="จุดตรวจ">จุดตรวจ</option>
-  <option value="รายงาน">รายงาน</option>
-  <option value="Checkin">Check in</option>
-  <option value="Checkout">Check out</option>
+<!-- เลือกโหมดหลัก -->
+<select id="mainType">
+  <option value="">-- เลือกประเภทหลัก --</option>
+  <option value="ตรวจจุด">ตรวจจุด</option>
+  <option value="checkinout">Checkin / Checkout</option>
 </select>
+
+<!-- โหมดตรวจจุด -->
+<div id="checkJobContainer" style="display:none;">
+  <select id="jobType">
+    <option value="">-- เลือกประเภทงาน --</option>
+    <option value="จุดตรวจ">จุดตรวจ</option>
+    <option value="รายงาน">รายงาน</option>
+  </select>
+</div>
+
+<!-- โหมด Checkin / Checkout -->
+<div id="checkinoutContainer" style="display:none;">
+  <label class="inline-label"><input type="checkbox" id="checkin"> Checkin</label>
+  <label class="inline-label"><input type="checkbox" id="checkout"> Checkout</label>
+</div>
 
 <input type="file" id="imageInput" accept="image/jpeg,image/png" multiple />
 <textarea id="text" rows="2" placeholder="ข้อความเพิ่มเติม (ถ้ามี)"></textarea>
@@ -92,7 +111,13 @@
   const botToken = "7764756651:AAF4G_IFWjNzKoTJj_lpQW3oLANKAZIVnWU";
   const chatId = "7906742430";
 
+  const zone = document.getElementById("zone");
+  const mainType = document.getElementById("mainType");
+  const checkJobContainer = document.getElementById("checkJobContainer");
   const jobType = document.getElementById("jobType");
+  const checkinoutContainer = document.getElementById("checkinoutContainer");
+  const checkin = document.getElementById("checkin");
+  const checkout = document.getElementById("checkout");
   const imageInput = document.getElementById("imageInput");
   const previewContainer = document.getElementById("previewContainer");
   const previewText = document.getElementById("previewText");
@@ -105,6 +130,22 @@
   let processedPhotos = [];
   let locationStr = "";
 
+  // แสดงฟอร์มย่อยตาม mainType
+  mainType.addEventListener("change", () => {
+    if (mainType.value === "checkinout") {
+      checkJobContainer.style.display = "none";
+      checkinoutContainer.style.display = "block";
+    } else if (mainType.value === "ตรวจจุด") {
+      checkJobContainer.style.display = "block";
+      checkinoutContainer.style.display = "none";
+    } else {
+      checkJobContainer.style.display = "none";
+      checkinoutContainer.style.display = "none";
+    }
+    updatePreviewText();
+  });
+
+  // อัพเดตรูป preview เมื่อเลือกไฟล์
   imageInput.addEventListener("change", (e) => {
     photos = Array.from(e.target.files).filter(file => {
       if (file.type === "image/heic" || file.name.endsWith(".heic")) {
@@ -125,6 +166,7 @@
     });
   }
 
+  // ดึงพิกัดและสถานที่
   function getLocation() {
     return new Promise((resolve) => {
       if (!navigator.geolocation) return resolve("");
@@ -144,18 +186,38 @@
     });
   }
 
+  // อัพเดตข้อความ preview
   function updatePreviewText() {
-  const job = jobType.value || "-";
-  const zone = document.getElementById("zone").value || "-";
-  const extra = extraText.value.trim();
-  const nowStr = new Date().toLocaleString("th-TH");
-  previewText.textContent = 
-    `📅 ${nowStr}\n📍 ${locationStr}\n🗂 เขต: ${zone}\n📌 งาน: ${job}${extra ? `\n📝 ${extra}` : ""}`;
-}
-	
+    const selectedZone = zone.value || "-";
+    const selectedMain = mainType.value || "-";
+    const selectedJob = (selectedMain === "ตรวจจุด") ? (jobType.value || "-") : "-";
+    const extra = extraText.value.trim();
+    const nowStr = new Date().toLocaleString("th-TH");
+
+    // กำหนด jobType preview สำหรับ checkinout
+    let jobPreview = "-";
+    if (selectedMain === "checkinout") {
+      const c = checkin.checked;
+      const o = checkout.checked;
+      if (c && o) jobPreview = "Checkin + Checkout";
+      else if (c) jobPreview = "Checkin";
+      else if (o) jobPreview = "Checkout";
+      else jobPreview = "-";
+    } else if (selectedMain === "ตรวจจุด") {
+      jobPreview = selectedJob;
+    }
+
+    previewText.textContent = 
+      `📅 ${nowStr}\n📍 ${locationStr}\n🗂 เขต: ${selectedZone}\n📌 งาน: ${jobPreview}${extra ? `\n📝 ${extra}` : ""}`;
+  }
+
   extraText.addEventListener("input", updatePreviewText);
   jobType.addEventListener("change", updatePreviewText);
+  zone.addEventListener("change", updatePreviewText);
+  checkin.addEventListener("change", updatePreviewText);
+  checkout.addEventListener("change", updatePreviewText);
 
+  // process รูปภาพด้วย canvas ให้เป็น jpeg blob
   async function processImage(file) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -170,48 +232,109 @@
     });
   }
 
+  // ส่งข้อมูลไป Telegram
   async function sendToTelegram() {
-    if (photos.length === 0) return alert("กรุณาเลือกรูปภาพ");
+    if (photos.length === 0) {
+      alert("กรุณาเลือกรูปภาพ");
+      return;
+    }
+    if (!mainType.value) {
+      alert("กรุณาเลือกประเภทหลัก");
+      return;
+    }
+    if (mainType.value === "ตรวจจุด" && !jobType.value) {
+      alert("กรุณาเลือกประเภทงาน");
+      return;
+    }
+    if (mainType.value === "checkinout" && !checkin.checked && !checkout.checked) {
+      alert("กรุณาเลือก Checkin หรือ Checkout อย่างน้อยหนึ่งรายการ");
+      return;
+    }
+
     status.textContent = "📍 กำลังดึงพิกัด...";
     await getLocation();
 
-    const caption = previewText.textContent;
     const nowStr = new Date().toLocaleString("th-TH");
-    const job = jobType.value || "-";
+    const selectedZone = zone.value || "-";
     const extraMsg = extraText.value.trim();
 
     processedPhotos = [];
 
+    // เตรียม log ตามจำนวนรูปภาพ และประเภทงาน
+    let idx = 1;
     for (let i = 0; i < photos.length; i++) {
       const blob = await processImage(photos[i]);
+
+      // ส่งรูปพร้อม caption เดียว (ถ้าเลือก checkin+checkout ส่งพร้อมกัน)
+      let caption = "";
+      if (mainType.value === "ตรวจจุด") {
+        caption = previewText.textContent;
+      } else if (mainType.value === "checkinout") {
+        const jobs = [];
+        if (checkin.checked) jobs.push("Checkin");
+        if (checkout.checked) jobs.push("Checkout");
+        caption = previewText.textContent + "\n📝 (รูปภาพนี้แสดงสำหรับ: " + jobs.join(" + ") + ")";
+      }
+
+      // ส่งรูปภาพแต่ละรูป
       const form = new FormData();
       form.append("chat_id", chatId);
       form.append("photo", blob, `photo${i + 1}.jpg`);
       form.append("caption", caption);
-
       await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
         method: "POST",
         body: form
       });
 
-	  const zone = document.getElementById("zone").value || "-";
-	  processedPhotos.push({ i: i + 1, nowStr, location: locationStr, zone, job, extraMsg });
+      // เตรียมข้อมูล log
+      if (mainType.value === "ตรวจจุด") {
+        processedPhotos.push({
+          i: idx++,
+          nowStr,
+          location: locationStr,
+          zone: selectedZone,
+          job: jobType.value,
+          extraMsg
+        });
+      } else if (mainType.value === "checkinout") {
+        if (checkin.checked) {
+          processedPhotos.push({
+            i: idx++,
+            nowStr,
+            location: locationStr,
+            zone: selectedZone,
+            job: "Checkin",
+            extraMsg
+          });
+        }
+        if (checkout.checked) {
+          processedPhotos.push({
+            i: idx++,
+            nowStr,
+            location: locationStr,
+            zone: selectedZone,
+            job: "Checkout",
+            extraMsg
+          });
+        }
+      }
     }
 
+    // สร้างไฟล์ Excel
     const wb = XLSX.utils.book_new();
     const data = [["ลำดับ", "วันเวลา", "สถานที่", "เขต", "ประเภทงาน", "ข้อความ"]];
-		processedPhotos.forEach(p =>
-	data.push([p.i, p.nowStr, p.location, p.zone, p.job, p.extraMsg])
-	);
+    processedPhotos.forEach(p => {
+      data.push([p.i, p.nowStr, p.location, p.zone, p.job, p.extraMsg]);
+    });
     const ws = XLSX.utils.aoa_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, ws, "Log");
     const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const excelBlob = new Blob([wbout], { type: "application/octet-stream" });
 
+    // ส่งไฟล์ Excel เข้า Telegram
     const logForm = new FormData();
     logForm.append("chat_id", chatId);
     logForm.append("document", excelBlob, "log.xlsx");
-
     await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
       method: "POST",
       body: logForm
@@ -222,10 +345,24 @@
     updatePreview();
     previewText.textContent = "";
     extraText.value = "";
+    checkin.checked = false;
+    checkout.checked = false;
+    mainType.value = "";
+    checkJobContainer.style.display = "none";
+    checkinoutContainer.style.display = "none";
+    jobType.value = "";
   }
 
-  document.getElementById("zone").addEventListener("change", updatePreviewText);
+  // ผูกปุ่มส่งข้อมูล
   document.getElementById("sendBtn").addEventListener("click", sendToTelegram);
+
+  // ผูก event อัพเดต preview text
+  extraText.addEventListener("input", updatePreviewText);
+  jobType.addEventListener("change", updatePreviewText);
+  zone.addEventListener("change", updatePreviewText);
+  checkin.addEventListener("change", updatePreviewText);
+  checkout.addEventListener("change", updatePreviewText);
+
 </script>
 
 </body>
