@@ -188,7 +188,7 @@
 		return false;
     }
     if (Date.now() - file.lastModified > 1800000) {
-      alert("รูปนี้ถ่ายไว้นานเกิน 10 วินาที กรุณาถ่ายใหม่ทันที");
+      alert("รูปนี้ถ่ายไว้นานเกิน 3 นาที กรุณาถ่ายใหม่ทันที");
       imageInputPatrol.value = ""; // reset input
       photosPatrol = [];
       updatePreviewPatrol();
@@ -260,7 +260,7 @@
       return false;
     }
     if (Date.now() - file.lastModified > 1800000) {
-      alert("รูปนี้ถ่ายไว้นานเกิน 10 วินาที กรุณาถ่ายใหม่ทันที");
+      alert("รูปนี้ถ่ายไว้นานเกิน 3 นาที กรุณาถ่ายใหม่ทันที");
       imageInputSigninout.value = ""; // reset input
       photosSigninout = [];
       updatePreviewSigninout();
