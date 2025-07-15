@@ -64,6 +64,13 @@
 
 <h2>📷 ระบบถ่ายภาพ + ส่ง Log เข้า Telegram</h2>
 
+<select id="zone">
+  <option value="">-- เลือกเขต --</option>
+  <option value="โซน A">โซน A</option>
+  <option value="โซน B">โซน B</option>
+  <option value="โซน C">โซน C</option>
+</select>
+
 <select id="jobType">
   <option value="">-- เลือกประเภทงาน --</option>
   <option value="จุดตรวจ">จุดตรวจ</option>
@@ -138,10 +145,13 @@
   }
 
   function updatePreviewText() {
-    const job = jobType.value || "-";
-    const extra = extraText.value.trim();
-    const nowStr = new Date().toLocaleString("th-TH");
-    previewText.textContent = `📅 ${nowStr}\n📍 ${locationStr}\n📌 งาน: ${job}${extra ? `\n📝 ${extra}` : ""}`;
+  const job = jobType.value || "-";
+  const zone = document.getElementById("zone").value || "-";
+  const extra = extraText.value.trim();
+  const nowStr = new Date().toLocaleString("th-TH");
+  previewText.textContent = 
+    `📅 ${nowStr}\n📍 ${locationStr}\n🗂 เขต: ${zone}\n📌 งาน: ${job}${extra ? `\n📝 ${extra}` : ""}`;
+}
   }
 
   extraText.addEventListener("input", updatePreviewText);
@@ -185,14 +195,15 @@
         body: form
       });
 
-      processedPhotos.push({ i: i + 1, nowStr, location: locationStr, job, extraMsg });
+	  const zone = document.getElementById("zone").value || "-";
+	  processedPhotos.push({ i: i + 1, nowStr, location: locationStr, zone, job, extraMsg });
     }
 
     const wb = XLSX.utils.book_new();
-    const data = [["ลำดับ", "วันเวลา", "สถานที่", "ประเภทงาน", "ข้อความ"]];
-    processedPhotos.forEach(p =>
-      data.push([p.i, p.nowStr, p.location, p.job, p.extraMsg])
-    );
+    const data = [["ลำดับ", "วันเวลา", "สถานที่", "เขต", "ประเภทงาน", "ข้อความ"]];
+		processedPhotos.forEach(p =>
+	data.push([p.i, p.nowStr, p.location, p.zone, p.job, p.extraMsg])
+	);
     const ws = XLSX.utils.aoa_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, ws, "Log");
     const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
@@ -214,7 +225,7 @@
     extraText.value = "";
   }
 
-  document.getElementById("sendBtn").addEventListener("click", sendToTelegram);
+  document.getElementById("zone").addEventListener("change", updatePreviewText);
 </script>
 
 </body>
