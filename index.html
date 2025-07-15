@@ -3,61 +3,81 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GGN PATROL SYSTEM - แยกแท็บ</title>
+<title>GGN PATROL SYSTEM - แบบกล่องแยก</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   body {
     font-family: "Segoe UI", Tahoma, sans-serif;
-    max-width: 480px;
+    max-width: 800px;
     margin: auto;
     padding: 15px;
     background: #f0f0f5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
   }
-  h2 { text-align: center; margin-bottom: 10px; }
-  .tabs { display: flex; margin-bottom: 10px; }
-  .tab {
-    flex: 1; padding: 10px; text-align: center; background: #ddd;
-    cursor: pointer; user-select: none;
-    border-radius: 5px 5px 0 0; border: 1px solid #ccc; border-bottom: none;
-    font-weight: bold;
+  .box {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 15px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
-  .tab.active { background: #004080; color: white; }
-  .tab-content {
-    background: white; padding: 15px;
-    border: 1px solid #ccc; border-radius: 0 5px 5px 5px;
+  h2 {
+    text-align: center;
+    margin-bottom: 15px;
   }
   select, input[type="file"], textarea, button {
-    width: 100%; margin-bottom: 10px;
-    font-size: 16px; padding: 8px;
-    border-radius: 5px; border: 1px solid #ccc;
+    width: 100%;
+    margin-bottom: 10px;
+    font-size: 16px;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
   }
-  #previewContainerPatrol img, #previewContainerSigninout img {
-    width: 120px; height: 160px; object-fit: cover;
-    border: 2px solid #444; border-radius: 6px;
+  .previewContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 10px;
   }
-  #previewContainerPatrol, #previewContainerSigninout {
-    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 10px;
+  .previewContainer img {
+    width: 100px;
+    height: 140px;
+    object-fit: cover;
+    border: 2px solid #444;
+    border-radius: 6px;
   }
   button {
-    background-color: #004080; color: white; font-size: 18px;
-    border: none; border-radius: 8px; cursor: pointer;
+    background-color: #004080;
+    color: white;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
   }
-  button:hover { background-color: #0066cc; }
-  #previewTextPatrol, #previewTextSigninout {
-    background: #fff; border: 1px solid #ccc;
-    padding: 10px; white-space: pre-wrap; font-size: 15px; margin-bottom: 10px;
+  button:hover {
+    background-color: #0066cc;
+  }
+  .previewText {
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    white-space: pre-wrap;
+    font-size: 15px;
+    margin-bottom: 10px;
   }
 </style>
 </head>
 <body>
 
-<h2>📷 GGN PATROL SYSTEM</h2>
-<div class="tabs">
-  <div class="tab active" data-tab="patrol">สแกนจุดตรวจ</div>
-  <div class="tab" data-tab="signinout">ลงชื่อเข้าออก</div>
-</div>
-
-<div class="tab-content" id="patrol" style="display:block;">
+<!-- กล่องสแกนจุดตรวจ -->
+<div class="box">
+  <h2>📌 สแกนจุดตรวจ</h2>
   <select id="zonePatrol">
     <option value="">-- เลือกเขต --</option>
     <option value="โซน A">โซน A</option>
@@ -71,13 +91,15 @@
   </select>
   <input type="file" id="imageInputPatrol" accept="image/jpeg,image/png" multiple />
   <textarea id="textPatrol" rows="2" placeholder="ข้อความเพิ่มเติม (ถ้ามี)"></textarea>
-  <div id="previewTextPatrol"></div>
-  <button id="sendBtnPatrol">ส่งภาพและ Log เข้า Telegram</button>
-  <div id="previewContainerPatrol"></div>
+  <div class="previewText" id="previewTextPatrol"></div>
+  <button id="sendBtnPatrol">ส่งภาพและ Log</button>
+  <div class="previewContainer" id="previewContainerPatrol"></div>
   <div id="statusPatrol"></div>
 </div>
 
-<div class="tab-content" id="signinout" style="display:none;">
+<!-- กล่องลงชื่อเข้าออก -->
+<div class="box">
+  <h2>📝 ลงชื่อเข้า/ออก</h2>
   <select id="zoneSigninout">
     <option value="">-- เลือกเขต --</option>
     <option value="โซน A">โซน A</option>
@@ -88,17 +110,182 @@
   <label><input type="checkbox" id="checkoutSigninout"> Checkout</label>
   <input type="file" id="imageInputSigninout" accept="image/jpeg,image/png" multiple />
   <textarea id="textSigninout" rows="2" placeholder="ข้อความเพิ่มเติม (ถ้ามี)"></textarea>
-  <div id="previewTextSigninout"></div>
-  <button id="sendBtnSigninout">ส่งภาพและ Log เข้า Telegram</button>
-  <div id="previewContainerSigninout"></div>
+  <div class="previewText" id="previewTextSigninout"></div>
+  <button id="sendBtnSigninout">ส่งภาพและ Log</button>
+  <div class="previewContainer" id="previewContainerSigninout"></div>
   <div id="statusSigninout"></div>
 </div>
 
 <canvas id="canvas" style="display:none;"></canvas>
+
 <script>
-// จะใส่โค้ด JS เต็มจากเวอร์ชันที่ปรับให้ครบพร้อม eventListener, updatePreviewText, getLocation,
-// sendPatrol และ sendSigninout ที่แก้ bug ให้แล้ว
-// สามารถ copy จากโค้ดล่าสุดที่เราแก้ไขด้านบน
+const botToken = "YOUR_BOT_TOKEN";
+const chatId = "YOUR_CHAT_ID";
+
+// -------------------- ส่วนสแกนจุดตรวจ --------------------
+const zonePatrol = document.getElementById("zonePatrol");
+const jobTypePatrol = document.getElementById("jobTypePatrol");
+const imageInputPatrol = document.getElementById("imageInputPatrol");
+const previewContainerPatrol = document.getElementById("previewContainerPatrol");
+const previewTextPatrol = document.getElementById("previewTextPatrol");
+const extraTextPatrol = document.getElementById("textPatrol");
+const statusPatrol = document.getElementById("statusPatrol");
+let photosPatrol = [], locationStrPatrol = "";
+
+imageInputPatrol.addEventListener("change", e => {
+  photosPatrol = Array.from(e.target.files);
+  updatePreview(previewContainerPatrol, photosPatrol);
+});
+
+function updatePreviewTextPatrol() {
+  const nowStr = new Date().toLocaleString("th-TH");
+  previewTextPatrol.textContent =
+    `📅 ${nowStr}\n📍 ${locationStrPatrol}\n🗂 เขต: ${zonePatrol.value || "-"}\n📌 งาน: ${jobTypePatrol.value || "-"}${extraTextPatrol.value.trim() ? "\n📝 " + extraTextPatrol.value.trim() : ""}`;
+}
+zonePatrol.addEventListener("change", updatePreviewTextPatrol);
+jobTypePatrol.addEventListener("change", updatePreviewTextPatrol);
+extraTextPatrol.addEventListener("input", updatePreviewTextPatrol);
+
+// -------------------- ส่วนลงชื่อเข้าออก --------------------
+const zoneSigninout = document.getElementById("zoneSigninout");
+const checkinSigninout = document.getElementById("checkinSigninout");
+const checkoutSigninout = document.getElementById("checkoutSigninout");
+const imageInputSigninout = document.getElementById("imageInputSigninout");
+const previewContainerSigninout = document.getElementById("previewContainerSigninout");
+const previewTextSigninout = document.getElementById("previewTextSigninout");
+const extraTextSigninout = document.getElementById("textSigninout");
+const statusSigninout = document.getElementById("statusSigninout");
+let photosSigninout = [], locationStrSigninout = "";
+
+imageInputSigninout.addEventListener("change", e => {
+  photosSigninout = Array.from(e.target.files);
+  updatePreview(previewContainerSigninout, photosSigninout);
+});
+
+function updatePreviewTextSigninout() {
+  const nowStr = new Date().toLocaleString("th-TH");
+  let job = "-";
+  if (checkinSigninout.checked && checkoutSigninout.checked) job = "Checkin + Checkout";
+  else if (checkinSigninout.checked) job = "Checkin";
+  else if (checkoutSigninout.checked) job = "Checkout";
+  previewTextSigninout.textContent =
+    `📅 ${nowStr}\n📍 ${locationStrSigninout}\n🗂 เขต: ${zoneSigninout.value || "-"}\n📌 งาน: ${job}${extraTextSigninout.value.trim() ? "\n📝 " + extraTextSigninout.value.trim() : ""}`;
+}
+zoneSigninout.addEventListener("change", updatePreviewTextSigninout);
+checkinSigninout.addEventListener("change", updatePreviewTextSigninout);
+checkoutSigninout.addEventListener("change", updatePreviewTextSigninout);
+extraTextSigninout.addEventListener("input", updatePreviewTextSigninout);
+
+// -------------------- ฟังก์ชันช่วย --------------------
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function updatePreview(container, files) {
+  container.innerHTML = "";
+  files.forEach(file => {
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    container.appendChild(img);
+  });
+}
+
+async function processImage(file) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(blob => resolve(blob), "image/jpeg", 0.9);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// -------------------- Get Location --------------------
+async function getLocation(setter) {
+  if (!navigator.geolocation) return "";
+  return new Promise(resolve => {
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=th`);
+        const data = await res.json();
+        setter(data.display_name || `${lat.toFixed(6)},${lon.toFixed(6)}`);
+      } catch {
+        setter(`${lat.toFixed(6)},${lon.toFixed(6)}`);
+      }
+      resolve();
+    }, () => resolve());
+  });
+}
+
+// -------------------- ส่ง Patrol --------------------
+document.getElementById("sendBtnPatrol").addEventListener("click", async () => {
+  if (!zonePatrol.value || !jobTypePatrol.value || photosPatrol.length == 0) {
+    alert("กรุณากรอกข้อมูลให้ครบ");
+    return;
+  }
+  statusPatrol.textContent = "📍 กำลังดึงพิกัด...";
+  await getLocation(v => { locationStrPatrol = v; updatePreviewTextPatrol(); });
+  let processed = [], nowStr = new Date().toLocaleString("th-TH");
+
+  for (let i=0; i<photosPatrol.length; i++) {
+    const blob = await processImage(photosPatrol[i]);
+    const form = new FormData();
+    form.append("chat_id", chatId);
+    form.append("photo", blob, `patrol_${i+1}.jpg`);
+    form.append("caption", previewTextPatrol.textContent);
+    await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: "POST", body: form });
+    processed.push([i+1, nowStr, locationStrPatrol, zonePatrol.value, jobTypePatrol.value, extraTextPatrol.value]);
+  }
+
+  sendExcel(processed, "patrol_log.xlsx", statusPatrol);
+});
+
+// -------------------- ส่ง Signinout --------------------
+document.getElementById("sendBtnSigninout").addEventListener("click", async () => {
+  if (!zoneSigninout.value || (!checkinSigninout.checked && !checkoutSigninout.checked) || photosSigninout.length == 0) {
+    alert("กรุณากรอกข้อมูลให้ครบ");
+    return;
+  }
+  statusSigninout.textContent = "📍 กำลังดึงพิกัด...";
+  await getLocation(v => { locationStrSigninout = v; updatePreviewTextSigninout(); });
+  let processed = [], nowStr = new Date().toLocaleString("th-TH");
+
+  for (let i=0; i<photosSigninout.length; i++) {
+    const blob = await processImage(photosSigninout[i]);
+    const jobs = [];
+    if (checkinSigninout.checked) jobs.push("Checkin");
+    if (checkoutSigninout.checked) jobs.push("Checkout");
+    for (const job of jobs) {
+      const form = new FormData();
+      form.append("chat_id", chatId);
+      form.append("photo", blob, `signinout_${i+1}_${job}.jpg`);
+      form.append("caption", previewTextSigninout.textContent + `\n📌 สำหรับ: ${job}`);
+      await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: "POST", body: form });
+      processed.push([processed.length+1, nowStr, locationStrSigninout, zoneSigninout.value, job, extraTextSigninout.value]);
+    }
+  }
+
+  sendExcel(processed, "signinout_log.xlsx", statusSigninout);
+});
+
+// -------------------- ส่ง Excel Log --------------------
+async function sendExcel(rows, filename, statusElem) {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([["ลำดับ", "วันเวลา", "สถานที่", "เขต", "ประเภทงาน", "ข้อความ"], ...rows]);
+  XLSX.utils.book_append_sheet(wb, ws, "Log");
+  const wbout = XLSX.write(wb, {bookType:"xlsx", type:"array"});
+  const blob = new Blob([wbout], {type:"application/octet-stream"});
+  const form = new FormData();
+  form.append("chat_id", chatId);
+  form.append("document", blob, filename);
+  await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method:"POST", body: form });
+  statusElem.textContent = "✅ ส่งภาพและ Log สำเร็จแล้ว!";
+}
 </script>
 
 </body>
