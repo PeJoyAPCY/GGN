@@ -114,7 +114,7 @@
 <div class="tab-content" id="patrol" style="display:block;">
   <select id="zonePatrol">
     <option value="">-- เลือกเขต --</option>
-    <option value="เขต 1">เขต 2</option>
+    <option value="เขต 1">เขต 1</option>
     <option value="เขต 2">เขต 2</option>
     <option value="เขตลำพูน">เขตลำพูน</option>
   </select>
@@ -123,7 +123,7 @@
     <option value="จุดตรวจ">จุดตรวจ</option>
     <option value="รายงาน">รายงาน</option>
   </select>
-  <input type="file" id="imageInputPatrol" accept="image/jpeg,image/png" multiple />
+  <input type="file" id="imageInputPatrol" accept="image/jpeg,image/png" capture="environment" multiple />
   <textarea id="textPatrol" rows="2" placeholder="ข้อความเพิ่มเติม (ถ้ามี)"></textarea>
   <div id="previewTextPatrol"></div>
   <button id="sendBtnPatrol">ส่งภาพและ Log เข้า Telegram</button>
@@ -135,13 +135,13 @@
 <div class="tab-content" id="signinout" style="display:none;">
   <select id="zoneSigninout">
     <option value="">-- เลือกเขต --</option>
-    <option value="เขต 1">เขต 2</option>
+    <option value="เขต 1">เขต 1</option>
     <option value="เขต 2">เขต 2</option>
     <option value="เขตลำพูน">เขตลำพูน</option>
   </select>
   <label><input type="radio" name="checkinout" value="Checkin" id="checkinSigninout"> Checkin</label>
   <label><input type="radio" name="checkinout" value="Checkout" id="checkoutSigninout"> Checkout</label>
-  <input type="file" id="imageInputSigninout" accept="image/jpeg,image/png" multiple />
+  <input type="file" id="imageInputSigninout" accept="image/jpeg,image/png" capture="environment" multiple />
   <textarea id="textSigninout" rows="2" placeholder="ข้อความเพิ่มเติม (ถ้ามี)"></textarea>
   <div id="previewTextSigninout"></div>
   <button id="sendBtnSigninout">ส่งภาพและ Log เข้า Telegram</button>
@@ -182,15 +182,22 @@
   let locationStrPatrol = "";
 
   imageInputPatrol.addEventListener('change', e => {
-    photosPatrol = Array.from(e.target.files).filter(file => {
-      if (file.type === "image/heic" || file.name.endsWith(".heic")) {
-        alert("ไม่รองรับไฟล์ .heic กรุณาใช้ .jpg หรือ .png");
-        return false;
-      }
-      return true;
-    });
-    updatePreviewPatrol();
+	photosPatrol = Array.from(e.target.files).filter(file => {
+	  if (file.type === "image/heic" || file.name.endsWith(".heic")) {
+		alert("ไม่รองรับไฟล์ .heic กรุณาใช้ .jpg หรือ .png");
+		return false;
+    }
+    if (Date.now() - file.lastModified > 10000) {
+      alert("รูปนี้ถ่ายไว้นานเกิน 10 วินาที กรุณาถ่ายใหม่ทันที");
+      imageInputPatrol.value = ""; // reset input
+      photosPatrol = [];
+      updatePreviewPatrol();
+      return false;
+    }
+    return true;
   });
+  updatePreviewPatrol();
+});
 
   function updatePreviewPatrol() {
     previewContainerPatrol.innerHTML = "";
@@ -247,15 +254,22 @@
   let locationStrSigninout = "";
 
   imageInputSigninout.addEventListener('change', e => {
-    photosSigninout = Array.from(e.target.files).filter(file => {
-      if (file.type === "image/heic" || file.name.endsWith(".heic")) {
-        alert("ไม่รองรับไฟล์ .heic กรุณาใช้ .jpg หรือ .png");
-        return false;
-      }
-      return true;
-    });
-    updatePreviewSigninout();
+  photosSigninout = Array.from(e.target.files).filter(file => {
+    if (file.type === "image/heic" || file.name.endsWith(".heic")) {
+      alert("ไม่รองรับไฟล์ .heic กรุณาใช้ .jpg หรือ .png");
+      return false;
+    }
+    if (Date.now() - file.lastModified > 10000) {
+      alert("รูปนี้ถ่ายไว้นานเกิน 10 วินาที กรุณาถ่ายใหม่ทันที");
+      imageInputSigninout.value = ""; // reset input
+      photosSigninout = [];
+      updatePreviewSigninout();
+      return false;
+    }
+    return true;
   });
+  updatePreviewSigninout();
+});
 
   function updatePreviewSigninout() {
     previewContainerSigninout.innerHTML = "";
