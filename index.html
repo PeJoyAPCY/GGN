@@ -152,8 +152,7 @@
   previewText.textContent = 
     `📅 ${nowStr}\n📍 ${locationStr}\n🗂 เขต: ${zone}\n📌 งาน: ${job}${extra ? `\n📝 ${extra}` : ""}`;
 }
-  }
-
+	
   extraText.addEventListener("input", updatePreviewText);
   jobType.addEventListener("change", updatePreviewText);
 
