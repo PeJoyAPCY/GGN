@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GGN CHECKIN SYSTEM</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      max-width: 480px;
+      margin: auto;
+      padding: 15px;
+      background: #f0f0f5;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    select, input[type="file"], textarea, button {
+      width: 100%;
+      margin-bottom: 10px;
+      font-size: 16px;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    #previewContainer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    #previewContainer img {
+      width: 120px;
+      height: 160px;
+      object-fit: cover;
+      border: 2px solid #444;
+      border-radius: 6px;
+    }
+    button {
+      background-color: #004080;
+      color: white;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0066cc;
+    }
+    #previewText {
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      white-space: pre-wrap;
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+    label {
+      font-weight: normal;
+      margin-right: 15px;
+      user-select: none;
+    }
+    input[type="radio"] {
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>📍 GGN CHECKIN SYSTEM</h2>
+
+<select id="zone">
+  <option value="">-- เลือกเขต --</option>
+  <option value="เขต 1">เขต 1</option>
+  <option value="เขต 2">เขต 2</option>
+  <option value="เขตลำพูน">เขตลำพูน</option>
+</select>
+<label><input type="radio" name="checkinout" value="Checkin" id="checkin"> Checkin</label>
+<label><input type="radio" name="checkinout" value="Checkout" id="checkout"> Checkout</label>
+<input type="file" id="imageInput" accept="image/*" capture="environment" multiple />
+<textarea id="extraText" rows="2" placeholder="ข้อความเพิ่มเติม (ถ้ามี)"></textarea>
+<div id="previewText"></div>
+<button id="sendBtn">ส่งภาพและ Log เข้า Telegram</button>
+<div id="previewContainer"></div>
+<div id="status"></div>
+<canvas id="canvas" style="display:none;"></canvas>
+
+<script>
+const botToken = "7589356383:AAFolUA6v17uCRdQXS6U7PYai0J24th-_-g";
+const chatId = "-896830552";
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const zone = document.getElementById('zone');
+const checkin = document.getElementById('checkin');
+const checkout = document.getElementById('checkout');
+const imageInput = document.getElementById('imageInput');
+const extraText = document.getElementById('extraText');
+const previewText = document.getElementById('previewText');
+const previewContainer = document.getElementById('previewContainer');
+const status = document.getElementById('status');
+
+let photos = [];
+let locationStr = "";
+
+imageInput.addEventListener('change', e => {
+  photos = Array.from(e.target.files).filter(file => {
+    if (file.type === "image/heic" || file.name.endsWith(".heic")) {
+      alert("ไม่รองรับไฟล์ .heic กรุณาใช้ .jpg หรือ .png");
+      return false;
+    }
+    if (Date.now() - file.lastModified > 180000) {
+      alert("รูปนี้ถ่ายไว้นานเกิน 3 นาที กรุณาถ่ายใหม่ทันที");
+      imageInput.value = "";
+      photos = [];
+      updatePreview();
+      return false;
+    }
+    return true;
+  });
+  updatePreview();
+});
+
+function updatePreview() {
+  previewContainer.innerHTML = "";
+  photos.forEach(file => {
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    previewContainer.appendChild(img);
+  });
+}
+
+async function getLocation() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) return resolve("");
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=th`);
+        const data = await res.json();
+        locationStr = data.display_name || `${lat.toFixed(6)},${lon.toFixed(6)}`;
+      } catch {
+        locationStr = `${lat.toFixed(6)},${lon.toFixed(6)}`;
+      }
+      updatePreviewText();
+      resolve();
+    }, () => resolve());
+  });
+}
+
+function updatePreviewText() {
+  const zoneVal = zone.value || "-";
+  const extra = extraText.value.trim();
+  const nowStr = new Date().toLocaleString("th-TH");
+  let jobPreview = "-";
+  if (checkin.checked) jobPreview = "Checkin";
+  else if (checkout.checked) jobPreview = "Checkout";
+
+  previewText.textContent = `📅 ${nowStr}\n📍 ${locationStr}\n🗂 เขต: ${zoneVal}\n📌 งาน: ${jobPreview}${extra ? `\n📝 ${extra}` : ""}`;
+}
+
+zone.addEventListener('change', updatePreviewText);
+checkin.addEventListener('change', updatePreviewText);
+checkout.addEventListener('change', updatePreviewText);
+extraText.addEventListener('input', updatePreviewText);
+
+async function processImage(file) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(blob => resolve(blob), "image/jpeg", 0.9);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function sendData() {
+  if (photos.length === 0) return alert("กรุณาเลือกรูปภาพ");
+  if (!zone.value) return alert("กรุณาเลือกเขต");
+  if (!checkin.checked && !checkout.checked) return alert("กรุณาเลือก Checkin หรือ Checkout อย่างใดอย่างหนึ่ง");
+
+  status.textContent = "📍 กำลังดึงพิกัด...";
+  await getLocation();
+
+  const nowStr = new Date().toLocaleString("th-TH");
+  const zoneVal = zone.value || "-";
+  const extraMsg = extraText.value.trim();
+  const job = checkin.checked ? "Checkin" : "Checkout";
+  const caption = previewText.textContent;
+  let processed = [];
+
+  for (let i = 0; i < photos.length; i++) {
+    const blob = await processImage(photos[i]);
+    const form = new FormData();
+    form.append("chat_id", chatId);
+    form.append("photo", blob, `photo${i+1}.jpg`);
+    form.append("caption", caption);
+    await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+      method: "POST",
+      body: form
+    });
+    processed.push([i+1, nowStr, locationStr, zoneVal, job, extraMsg]);
+  }
+
+  // send log
+  const wb = XLSX.utils.book_new();
+  const data = [["ลำดับ", "วันเวลา", "สถานที่", "เขต", "ประเภทงาน", "ข้อความ"]].concat(processed);
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, "Log");
+  const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const logBlob = new Blob([wbout], { type: "application/octet-stream" });
+
+  const logForm = new FormData();
+  logForm.append("chat_id", chatId);
+  logForm.append("document", logBlob, "checkinout_log.xlsx");
+  await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
+    method: "POST",
+    body: logForm
+  });
+
+  status.textContent = "✅ ส่งภาพและ log สำเร็จแล้ว!";
+  photos = [];
+  imageInput.value = "";
+  updatePreview();
+  previewText.textContent = "";
+  extraText.value = "";
+  zone.value = "";
+  checkin.checked = false;
+  checkout.checked = false;
+}
+
+document.getElementById('sendBtn').addEventListener('click', sendData);
+updatePreviewText();
+</script>
+
+</body>
+</html>
