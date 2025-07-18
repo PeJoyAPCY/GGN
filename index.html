@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
@@ -90,7 +89,7 @@
 
 <script>
 const botToken = "7589356383:AAFolUA6v17uCRdQXS6U7PYai0J24th-_-g";
-const chatId = "896830552";
+const chatId = "-896830552";
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
@@ -110,13 +109,6 @@ imageInput.addEventListener('change', e => {
   photos = Array.from(e.target.files).filter(file => {
     if (file.type === "image/heic" || file.name.endsWith(".heic")) {
       alert("ไม่รองรับไฟล์ .heic กรุณาใช้ .jpg หรือ .png");
-      return false;
-    }
-    if (Date.now() - file.lastModified > 180000) {
-      alert("รูปนี้ถ่ายไว้นานเกิน 3 นาที กรุณาถ่ายใหม่ทันที");
-      imageInput.value = "";
-      photos = [];
-      updatePreview();
       return false;
     }
     return true;
